@@ -1,0 +1,6 @@
+# ignore binary files
+bin/
+
+# ignore Vscode and Eclipse Settings
+.settings
+.vscode
