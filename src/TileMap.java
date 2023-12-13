@@ -1,3 +1,4 @@
+import java.awt.Color;
 import java.awt.Graphics;
 
 import java.io.BufferedReader;
@@ -13,7 +14,7 @@ public class TileMap {
     public int numTilesX, numTilesY;
     public int[][][] serializedTileset;
     private TileParser tileParser;
-    public ArrayList<Layer> layers;
+    private ArrayList<Layer> layers;
 
     public TileMap(String fileName, TileParser tileParser, int scale) {
         this.tileParser = tileParser;
@@ -25,9 +26,21 @@ public class TileMap {
         this.tileParser = tileParser;
         this.numTilesX = numCols;
         this.numTilesY = numRows;
-        layers = new ArrayList<Layer>();
-        layers.add(new Layer(numTilesY, numTilesX));
+        this.layers = new ArrayList<>();
+        this.layers.add(new CollisionLayer(numRows, numCols));
+        this.layers.add(new TileLayer(numTilesY, numTilesX, tileParser));
         this.scale = scale;
+    }
+
+    private void loadLayer(Layer layer, BufferedReader input) throws IOException {
+        for (int row = 0; row < numTilesY; row++) {
+            String line = input.readLine();
+            String[] codes = line.split(",");
+            for (int col = 0; col < numTilesX; col++) {
+                int code = tileParser.parseString(codes[col]);
+                layer.setSerialized(row, col, code);
+            }
+        }
     }
 
     public void loadMap(String fileName) {
@@ -39,19 +52,13 @@ public class TileMap {
             numTilesY = Integer.parseInt(input.readLine()); // How many rows in each layer?
 
             layers = new ArrayList<>(numLayers);
+            layers.add(new CollisionLayer(numTilesY, numTilesX));
+            loadLayer(layers.get(0), input);
 
-            for (int i = 0; i < numLayers; i++) {
-                Layer layer = new Layer(numTilesY, numTilesX);
-                for (int row = 0; row < numTilesY; row++) {
-                    String line = input.readLine();
-                    String[] codes = line.split(",");
-                    for (int col = 0; col < numTilesX; col++) {
-                        int code = tileParser.parseString(codes[col]);
-                        Tile tile = tileParser.getTile(code);
-                        layer.setSerialized(row, col,code);
-                        layer.setTile(row,col,tile);
-                    }
-                }
+            // start from 1 because we skip the collision layer
+            for (int i = 1; i < numLayers; i++) {
+                TileLayer layer = new TileLayer(numTilesY, numTilesX, tileParser);
+                loadLayer(layer, input);
                 layers.add(layer);
             }
 
@@ -60,6 +67,17 @@ public class TileMap {
             System.out.println("Map Columns: " + numTilesX);
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void saveLayer(Layer layer, BufferedWriter output) throws IOException {
+        for (int row = 0; row < numTilesY; row++) {
+            for (int col = 0; col < numTilesX; col++) {
+                String code = tileParser.getString(layer.getSerialized(row, col));
+                String separator = col > 0 ? "," : "";
+                output.write(separator+code);
+            }
+            output.write("\n");
         }
     }
 
@@ -72,14 +90,7 @@ public class TileMap {
             output.write(numTilesY + "\n");
 
             for (Layer layer : layers) {
-                for (int row = 0; row < numTilesY; row++) {
-                    for (int col = 0; col < numTilesX; col++) {
-                        String code = tileParser.getString(layer.getSerialized(row, col));
-                        String separator = col > 0 ? "," : "";
-                        output.write(separator+code);
-                    }
-                    output.write("\n");
-                }
+                saveLayer(layer, output);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -91,35 +102,65 @@ public class TileMap {
         int col = Math.floorDiv(x + Camera.x, scale);
         
         if (row >= 0 && row < numTilesY && col >= 0 && col < numTilesX) {
-            Tile tile = tileParser.getTile(code);
+            /*
+             * if layerIndex == 0 then we are dealing with the collision layer
+             * simply cycle the code between 0 and 1
+             */
             Layer layer = layers.get(layerIndex);
-            layer.setSerialized(row, col, code);;
-            layer.setTile(row, col, tile);
+            code = layerIndex > 0 ? code : (layer.getSerialized(row, col) + 1) % 2;
+            layer.setSerialized(row, col, code);
         } else {
             System.out.println("Invalid row or column: " + row + ", " + col);
         }
         
     }
 
+    public void addLayer() {
+        layers.add(new TileLayer(numTilesY, numTilesX, tileParser));
+    }
+
+    public Layer getLayer(int layerIndex) {
+        return layers.get(layerIndex);
+    }
+
+    public ArrayList<Layer> getLayers() {
+        return layers;
+    }
+    
     public void draw(Graphics g) {
-        for (Layer layer : layers) {
+        int startRow = Math.floorDiv(Camera.y, scale);
+        int startCol = Math.floorDiv(Camera.x, scale);
+        int endRow = Math.floorDiv(Camera.y + Camera.h, scale);
+        int endCol = Math.floorDiv(Camera.x + Camera.w, scale);
+
+        if (endCol < 0 || endRow < 0 || startCol >= numTilesX || startRow >= numTilesY) {
+            // camera cant see tilemap anyway
+            return;
+        }
+
+        // clamp values to grid values
+        startRow = Math.max(startRow, 0);
+        startCol = Math.max(startCol, 0);
+        endRow = Math.min(endRow + 1, numTilesY);
+        endCol = Math.min(endCol + 1, numTilesX);
+
+        // loop through all TileLayers
+        for (int i = 1; i < layers.size(); i++) {
+            Layer layer = layers.get(i);
             if (!layer.contentVisible) {
                 continue;
             }
             
-            for (int row = 0; row < numTilesY; row++) {
-                for (int col = 0; col < numTilesX; col++) {
-                    Tile tile = layer.getTile(row, col);
-                    
-                    if (tile == null) {
-                        continue;
-                    }
-                    
-                    int x = col * scale - Camera.x;
-                    int y = row * scale - Camera.y;
-                    tile.draw(g, x, y, scale, scale);
-                }
-            }
+            layer.draw(g, startRow, startCol, endRow, endCol, scale, scale);
         }
+
+        Layer collisionLayer = layers.get(0);
+        if (!collisionLayer.contentVisible) {
+            return;
+        }
+        
+        // Draw Collision layer last so it can be on top
+        g.setColor(Color.RED);
+        collisionLayer.draw(g, startRow, startCol, endRow, endCol, scale, scale);
     }
 }

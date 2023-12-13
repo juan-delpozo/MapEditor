@@ -1,4 +1,9 @@
 public class TileParser {
+    private static final double inverseLog2 = 1.0 / Math.log(2);
+    private static int getNecessayBits(int value) {
+        double logValue = Math.log(value);
+        return (int) Math.ceil(logValue * inverseLog2);
+    } 
 
     public TileAtlas[] tileAtlases;
     private int tileBits;
@@ -21,13 +26,11 @@ public class TileParser {
         }
         invalidTileIndex = maxTiles;
 
-        tileBits = 11; // TODO: Programatically find min number of bits to store maxTiles
+        tileBits = getNecessayBits(maxTiles);
         tileMask = (int) Math.pow(2, tileBits) - 1;
-
-        atlasBits = 3; // TODO: Programatically find min number of bits to store numAtlases
+        atlasBits = getNecessayBits(numAtlases);
         atlasMask = ((int) Math.pow(2 , atlasBits) - 1) << tileBits;
         formatString = "%" + (tileBits + atlasBits) + "s";
-        System.out.println(getString(tileMask));
     }
 
     public int getCode(int tileAtlasIndex, int tileIndex) {
