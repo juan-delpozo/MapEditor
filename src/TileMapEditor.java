@@ -23,11 +23,8 @@ public class TileMapEditor extends JFrame implements ActionListener, ComponentLi
 
     public ArrayList<TilePanel> tilePanels;
     public int activeTilePanelIndex;
-    // public TilePanel tilePN;
-
     public JMenuItem save;
     public MapPanel mapPN;
-    // public TileAtlas tileAtlas;
     public TileMap tilemap;
     public TileParser tileParser;
 
@@ -88,6 +85,18 @@ public class TileMapEditor extends JFrame implements ActionListener, ComponentLi
         return scrollPane;
     }
 
+    private JTabbedPane createTabbedPane() {
+        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.addTab("Fences", createScrollPane(AssetPool.getLandscapeAtlas(0)));
+        tabbedPane.addTab("Grounds", createScrollPane(AssetPool.getLandscapeAtlas(1)));
+        tabbedPane.addTab("Logs", createScrollPane(AssetPool.getLandscapeAtlas(2)));
+        tabbedPane.addTab("Mushrooms", createScrollPane(AssetPool.getLandscapeAtlas(3)));
+        tabbedPane.addTab("Trees", createScrollPane(AssetPool.getLandscapeAtlas(4)));
+        tabbedPane.addTab("Wild Flowers", createScrollPane(AssetPool.getLandscapeAtlas(5)));
+
+        return tabbedPane;
+    }
+
     private JPanel createEditorControlPanel() {
         JPanel editorPanel = new JPanel(new GridBagLayout());
         GridBagConstraints constraints = new GridBagConstraints();
@@ -98,17 +107,12 @@ public class TileMapEditor extends JFrame implements ActionListener, ComponentLi
         constraints.weightx = 1;
         constraints.weighty = 0.5;
 
-        JPanel layerPanel = new JPanel(); // Placeholder until layerControlPanel is implemented
+        // LayerControlPanel layerPanel = new LayerControlPanel(this, tilemap.getLayers());
+        JPanel layerPanel = new JPanel();
         layerPanel.setFocusable(true);
         layerPanel.setBackground(Color.GRAY);
         
-        JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("Fences", createScrollPane(AssetPool.getLandscapeAtlas(0)));
-        tabbedPane.addTab("Grounds", createScrollPane(AssetPool.getLandscapeAtlas(1)));
-        tabbedPane.addTab("Logs", createScrollPane(AssetPool.getLandscapeAtlas(2)));
-        tabbedPane.addTab("Mushrooms", createScrollPane(AssetPool.getLandscapeAtlas(3)));
-        tabbedPane.addTab("Trees", createScrollPane(AssetPool.getLandscapeAtlas(4)));
-        tabbedPane.addTab("Wild Flowers", createScrollPane(AssetPool.getLandscapeAtlas(5)));
+        JTabbedPane tabbedPane = createTabbedPane();
 
         tabbedPane.setSelectedIndex(0);
         activeTilePanelIndex = tabbedPane.getSelectedIndex();
