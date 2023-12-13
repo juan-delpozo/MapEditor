@@ -1,36 +1,39 @@
-import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
 public class MapPanel extends GridPanel {
 
+    TileMapEditor editor;
+    TileParser tileParser;
     TilePanel tilePN;
     TileMap tilemap;
 
     public MapPanel(TileMapEditor editor) {
-        super(editor);
-        tilePN = editor.tilePN;
-        tilemap = editor.tilemap;
-        setBounds(10, 10, 800, 448);
-        setBackground(bgColor);
+        super(editor.tilemap.scale);
+        this.editor = editor;
+        this.tilemap = editor.tilemap;
+        this.tileParser = editor.tileParser;
     }
 
     public void mousePressed(MouseEvent e) {
-        if (tilePN == null) {
-            System.out.println("No TilePanel");
-        } else {
-            char activeTile = tilePN.activeTile;
-            int layer = tilemap.getCurrentLayer(); // Use the current layer
-            tilemap.change(mx, my, activeTile, layer);
+        int activeTilePanelIndex = editor.activeTilePanelIndex;
+        if (activeTilePanelIndex == tileParser.invalidAtlasIndex) {
+            return;
         }
+
+        int activeTileIndex = editor.getTilePanel(activeTilePanelIndex).activeTileIndex;
+        int code = tileParser.getCode(activeTilePanelIndex, activeTileIndex);
+
+        int layer = editor.getCurrentLayer(); // Use the current layer
+        tilemap.change(mx, my, code, layer);
         repaint();
     }
 
     public void keyPressed(KeyEvent e) {
-        int code = e.getKeyCode();
+        int keyCode = e.getKeyCode();
 
-        switch (code) {
+        switch (keyCode) {
             case KeyEvent.VK_UP:
                 Camera.moveUp(scale);
                 break;
@@ -44,16 +47,19 @@ public class MapPanel extends GridPanel {
                 Camera.moveRight(scale);
                 break;
             case KeyEvent.VK_SPACE:
-                char activeTile = tilePN.activeTile;
-                int layer = tilemap.getCurrentLayer();
-                tilemap.change(mx, my, activeTile, layer);
+                int activeTilePanelIndex = editor.activeTilePanelIndex;
+
+                int activeTileIndex = activeTilePanelIndex == tileParser.invalidAtlasIndex ? tileParser.invalidTileIndex : editor.getTilePanel(activeTilePanelIndex).activeTileIndex;
+                int code = tileParser.getCode(activeTilePanelIndex, activeTileIndex);
+                int layer = editor.getCurrentLayer();
+                tilemap.change(mx, my, code, layer);
                 break;
             case KeyEvent.VK_0: // Change to layer 0
             case KeyEvent.VK_1: // Change to layer 1
             case KeyEvent.VK_2: // Change to layer 2
-                int layerNumber = code - KeyEvent.VK_0;
-                tilemap.setCurrentLayer(layerNumber);
-                System.out.println("Current Layer: " + tilemap.getCurrentLayer());
+                int layerNumber = keyCode - KeyEvent.VK_0;
+                editor.setCurrentLayer(layerNumber);
+                System.out.println("Current Layer: " + editor.getCurrentLayer());
                 break;
         }
 
@@ -61,11 +67,7 @@ public class MapPanel extends GridPanel {
     }
 
     @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
+    protected void draw(Graphics g) {
         tilemap.draw(g);
-        g.setColor(Color.GREEN);
-        if (mouseWithin)
-            box.draw(g);
     }
 }

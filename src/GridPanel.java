@@ -27,16 +27,15 @@ public class GridPanel extends JPanel implements KeyListener, MouseListener, Mou
     boolean mouseWithin = false;
 
     // Reference to the TileMapEditor
-    TileMapEditor editor;
 
-    public GridPanel(TileMapEditor editor) {
-        this.editor = editor;
-        this.scale = editor.tilemap.S;
+    public GridPanel(int scale) {
+        this.scale = scale;
 
         // Initialize the cursor rectangle
         this.box = new Rect(-100, 100, scale, scale);
 
         // Set up event listeners
+        setBackground(bgColor);
         addKeyListener(this);
         addMouseListener(this);
         addMouseMotionListener(this);
@@ -74,19 +73,15 @@ public class GridPanel extends JPanel implements KeyListener, MouseListener, Mou
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-
-        // Draw background
-        g.setColor(bgColor);
-        g.fillRect(0, 0, getWidth(), getHeight());
-
-        // Draw the tile map from the TileMapEditor
-        editor.tilemap.draw(g);
+        draw(g);
 
         // Draw cursor if the mouse is within the panel
         g.setColor(Color.GREEN);
         if (mouseWithin)
             box.draw(g);
     }
+
+    protected void draw(Graphics g) {}
 }
 
 

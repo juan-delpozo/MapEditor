@@ -1,76 +1,167 @@
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.util.ArrayList;
 
-import javax.imageio.ImageIO;
-import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeEvent;
 
-public class TileMapEditor extends JFrame implements ActionListener {
+public class TileMapEditor extends JFrame implements ActionListener, ComponentListener {
 
-    public TilePanel tilePN;
+    public ArrayList<TilePanel> tilePanels;
+    public int activeTilePanelIndex;
+    // public TilePanel tilePN;
+
+    public JMenuItem save;
     public MapPanel mapPN;
-    public JButton saveBN;
-    public TileAtlas tileAtlas;
-    public  TileMap tilemap;
+    // public TileAtlas tileAtlas;
+    public TileMap tilemap;
+    public TileParser tileParser;
 
     public TileMapEditor() {
-        try {
-            BufferedImage grounds = ImageIO.read(new File("res/sprites/landscape/FG_Grounds.png"));
-         
-            // First sample area
-            Rect grass = new Rect(96, 192, 90, 48);
+        tilePanels = new ArrayList<>();
+        save = new JMenuItem("Save");
+        tileParser = new TileParser(AssetPool.getLandscapeAtlases());
+        // tilemap = new TileMap(tileParser, 16, 25, 50);
+        tilemap = new TileMap("map.map", tileParser, 16);
+        mapPN = new MapPanel(this);
 
-            // Second sample area
-            Rect dirt = new Rect(96, 576, 90, 48);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1280, 900);
+        setTitle("Tile Map Editor");
+        
+        createMenuBar();
+        
+        setLayout(new GridBagLayout());
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.insets = new Insets(15,15,15,15);
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.weightx = 2.0 / 3.0;
+        constraints.weighty = 1.0;
 
+        add(mapPN, constraints);
 
-            // Create TileAtlas with both sample areas
-            int[][] tileDimensions = {
-                    {16, 16, 0}, // Specify the tile dimensions and spacing for sampleArea1
-                    {16, 16, 0}  // Specify the tile dimensions and spacing for sampleArea2
-            };
-            tileAtlas = new TileAtlas(grounds, new Rect[]{grass, dirt}, tileDimensions);
+        JPanel editorPanel = createEditorControlPanel();
+        constraints.weightx = 1.0 / 3.0;
+        constraints.gridx = 1;
+        add(editorPanel, constraints);
 
-            System.out.println(tileAtlas.getNumTiles());
+        mapPN.addComponentListener(this);
+        Camera.setLocation(0, 0);
+    }
 
-            // You need to adjust code based on how many tiles. The num of tiles is printed to the console.
-            tilemap = new TileMap("map.map", tileAtlas, 16, "abcdefghijklmnopqrstuvwxyzABCDEFG");
+    private void createMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+        JMenu fileMenu = new JMenu("File");
+        save.addActionListener(this);
+        fileMenu.add(save);
+        menuBar.add(fileMenu);
+        setJMenuBar(menuBar);
+    }
 
-            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            setSize(1280, 900);
-            setTitle("Tile Map Editor");
+    private JScrollPane createScrollPane(TileAtlas atlas) {
+        TilePanel tilePanel = new TilePanel(atlas, tileParser);
+        tilePanels.add(tilePanel);
 
-            tilePN = new TilePanel(this);
-            mapPN = new MapPanel(this);
-            saveBN = new JButton("Save");
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.setViewportView(tilePanel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(32);
+        scrollPane.getVerticalScrollBar().setBlockIncrement(32);
+        
+        return scrollPane;
+    }
 
-            setLayout(null);
+    private JPanel createEditorControlPanel() {
+        JPanel editorPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.insets.bottom = 15;
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.weightx = 1;
+        constraints.weighty = 0.5;
 
-            add(mapPN);
-            add(tilePN);
-            add(saveBN);
+        JPanel layerPanel = new JPanel(); // Placeholder until layerControlPanel is implemented
+        layerPanel.setFocusable(true);
+        layerPanel.setBackground(Color.GRAY);
+        
+        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.addTab("Fences", createScrollPane(AssetPool.getLandscapeAtlas(0)));
+        tabbedPane.addTab("Grounds", createScrollPane(AssetPool.getLandscapeAtlas(1)));
+        tabbedPane.addTab("Logs", createScrollPane(AssetPool.getLandscapeAtlas(2)));
+        tabbedPane.addTab("Mushrooms", createScrollPane(AssetPool.getLandscapeAtlas(3)));
+        tabbedPane.addTab("Trees", createScrollPane(AssetPool.getLandscapeAtlas(4)));
+        tabbedPane.addTab("Wild Flowers", createScrollPane(AssetPool.getLandscapeAtlas(5)));
 
-            saveBN.setBounds(10, 500, 100, 20);
+        tabbedPane.setSelectedIndex(0);
+        activeTilePanelIndex = tabbedPane.getSelectedIndex();
 
-            saveBN.addActionListener(this);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        tabbedPane.addChangeListener((ChangeEvent e) -> {
+            activeTilePanelIndex = tabbedPane.getSelectedIndex();
+            activeTilePanelIndex = activeTilePanelIndex != -1 ? activeTilePanelIndex : tileParser.invalidAtlasIndex;
+        });
+
+        editorPanel.add(layerPanel, constraints);
+        constraints.insets.bottom = 0;
+        constraints.gridy = 1;
+        editorPanel.add(tabbedPane, constraints);
+
+        return editorPanel;
+    }
+
+    public TilePanel getTilePanel(int panelIndex) {
+        return tilePanels.get(panelIndex);
+    }
+
+    //TODO: Implement layer logic
+    public int getCurrentLayer() {
+        return 0;
+    }
+
+    public void setCurrentLayer(int layer) {
+
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == saveBN) {
+        if (e.getSource() == save) {
             tilemap.saveMap("map.map");
             System.out.println("Saved map to bin folder.");
         }
     }
 
+	@Override
+	public void componentResized(ComponentEvent e) {
+		Dimension currentSize = e.getComponent().getSize();
+		Camera.setSize(currentSize.width, currentSize.height);
+	}
+
+	@Override
+	public void componentMoved(ComponentEvent e) {}
+	@Override
+	public void componentShown(ComponentEvent e) {}
+	@Override
+	public void componentHidden(ComponentEvent e) {}
+    
     public static void main(String[] args) {
+        AssetPool.load();
         SwingUtilities.invokeLater(() -> {
             TileMapEditor editor = new TileMapEditor();
             editor.setVisible(true);
