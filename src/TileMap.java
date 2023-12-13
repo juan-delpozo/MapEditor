@@ -41,17 +41,18 @@ public class TileMap {
             layers = new ArrayList<>(numLayers);
 
             for (int i = 0; i < numLayers; i++) {
-                Layer layer = new Layer(numTilesX, numTilesY);
+                Layer layer = new Layer(numTilesY, numTilesX);
                 for (int row = 0; row < numTilesY; row++) {
                     String line = input.readLine();
                     String[] codes = line.split(",");
                     for (int col = 0; col < numTilesX; col++) {
                         int code = tileParser.parseString(codes[col]);
                         Tile tile = tileParser.getTile(code);
-                        layer.setSerialized(col, row,code);
-                        layer.setTile(col,row,tile);
+                        layer.setSerialized(row, col,code);
+                        layer.setTile(row,col,tile);
                     }
                 }
+                layers.add(layer);
             }
 
             System.out.println("Map Layers: " + numLayers);

@@ -48,7 +48,7 @@ public class TileParser {
     public Tile getTile(int code) {
         int tileAtlasIndex = (code & atlasMask) >> tileBits; // Bitwise and to get tileAtlasIndex from code
         int tileIndex = code & tileMask; // Bitwise and to get tileIndex from code
-        System.out.println(tileAtlasIndex + ", " + tileIndex);
+        
         if (tileAtlasIndex == invalidAtlasIndex || tileIndex == invalidTileIndex) {
             return null;
         }

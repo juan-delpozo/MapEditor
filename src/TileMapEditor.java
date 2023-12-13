@@ -35,7 +35,8 @@ public class TileMapEditor extends JFrame implements ActionListener, ComponentLi
         tilePanels = new ArrayList<>();
         save = new JMenuItem("Save");
         tileParser = new TileParser(AssetPool.getLandscapeAtlases());
-        tilemap = new TileMap(tileParser, 16, 50, 50);
+        // tilemap = new TileMap(tileParser, 16, 25, 50);
+        tilemap = new TileMap("map.map", tileParser, 16);
         mapPN = new MapPanel(this);
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -73,6 +74,20 @@ public class TileMapEditor extends JFrame implements ActionListener, ComponentLi
         setJMenuBar(menuBar);
     }
 
+    private JScrollPane createScrollPane(TileAtlas atlas) {
+        TilePanel tilePanel = new TilePanel(atlas, tileParser);
+        tilePanels.add(tilePanel);
+
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.setViewportView(tilePanel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(32);
+        scrollPane.getVerticalScrollBar().setBlockIncrement(32);
+        
+        return scrollPane;
+    }
+
     private JPanel createEditorControlPanel() {
         JPanel editorPanel = new JPanel(new GridBagLayout());
         GridBagConstraints constraints = new GridBagConstraints();
@@ -88,17 +103,12 @@ public class TileMapEditor extends JFrame implements ActionListener, ComponentLi
         layerPanel.setBackground(Color.GRAY);
         
         JTabbedPane tabbedPane = new JTabbedPane();
-        for (TileAtlas atlas : AssetPool.getLandscapeAtlases()) {
-            JScrollPane scrollPane = new JScrollPane();
-            TilePanel tilePanel = new TilePanel(atlas, tileParser);
-            scrollPane.setViewportView(tilePanel);
-            scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-            scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-            scrollPane.getVerticalScrollBar().setUnitIncrement(32);
-            scrollPane.getVerticalScrollBar().setBlockIncrement(32);
-            tabbedPane.addTab("Test", scrollPane);
-            tilePanels.add(tilePanel);
-        }
+        tabbedPane.addTab("Fences", createScrollPane(AssetPool.getLandscapeAtlas(0)));
+        tabbedPane.addTab("Grounds", createScrollPane(AssetPool.getLandscapeAtlas(1)));
+        tabbedPane.addTab("Logs", createScrollPane(AssetPool.getLandscapeAtlas(2)));
+        tabbedPane.addTab("Mushrooms", createScrollPane(AssetPool.getLandscapeAtlas(3)));
+        tabbedPane.addTab("Trees", createScrollPane(AssetPool.getLandscapeAtlas(4)));
+        tabbedPane.addTab("Wild Flowers", createScrollPane(AssetPool.getLandscapeAtlas(5)));
 
         tabbedPane.setSelectedIndex(0);
         activeTilePanelIndex = tabbedPane.getSelectedIndex();
