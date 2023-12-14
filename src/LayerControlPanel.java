@@ -2,19 +2,20 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
+
 import java.util.ArrayList;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 public class LayerControlPanel extends JPanel {
-    private static final int BOTTOM_INSET = 5;  
+    private static final Dimension SCROLL_SIZE = new Dimension(400, 300);
     private ArrayList<LayerPanel> layerPanels;
     private JScrollPane layerScrollPane;
     private JPanel view;
-    private GridBagConstraints viewConstraints;
     public JButton addLayerButton;
     public JButton deleteLayerButton;
     public int selectedIndex = 0;
@@ -47,22 +48,17 @@ public class LayerControlPanel extends JPanel {
     }
 
     private JScrollPane createLayerScrollPane(ArrayList<Layer> layers) {
-        view = new JPanel(new GridBagLayout());
-        view.setPreferredSize(new Dimension(400, 300));
+        view = new JPanel();
+        BoxLayout layout = new BoxLayout(view, BoxLayout.Y_AXIS);
+        view.setLayout(layout);
+        view.setPreferredSize(SCROLL_SIZE);
         view.setBackground(Color.BLACK);
-
-        viewConstraints = new GridBagConstraints();
-        viewConstraints.insets = new Insets(0, 5, BOTTOM_INSET, 5);
-        viewConstraints.fill = GridBagConstraints.HORIZONTAL;
-        viewConstraints.anchor = GridBagConstraints.NORTH;
-        viewConstraints.gridx = 0;
-        viewConstraints.weightx = 1;
-        viewConstraints.weighty = 1;
+        
+        view.add(Box.createHorizontalGlue());
 
         for (int i = 0; i < layers.size(); i++) {
             addLayer(view, layers.get(i), i == 0);
         }
-
 
         layerScrollPane = new JScrollPane(view, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         layerScrollPane.getVerticalScrollBar().setUnitIncrement(50);
@@ -102,14 +98,19 @@ public class LayerControlPanel extends JPanel {
         this.layerPanels.get(selectedIndex).select();
     }
 
+    private void adjustScrollPane() {
+        int sizeY = Math.max(LayerPanel.PANEL_HEIGHT * layerPanels.size(), SCROLL_SIZE.height);
+        view.setPreferredSize(new Dimension(SCROLL_SIZE.width, sizeY));
+        view.setSize(view.getPreferredSize());
+    }
+
     private LayerPanel addLayer(JPanel view, Layer layer, boolean locked) {
-        Dimension currentSize = view.getPreferredSize();
-        viewConstraints.gridy = GridBagConstraints.RELATIVE;
-        LayerPanel layerPanel = new LayerPanel(layer, locked);
+        int size = layerPanels.size();
+        String name = size == 0 ? "Collision Layer" : "New Layer"; 
+        LayerPanel layerPanel = new LayerPanel(layer, locked, name);
         layerPanels.add(layerPanel);
-        view.add(layerPanel, viewConstraints);
-        int sizeY = (LayerPanel.PANEL_HEIGHT + BOTTOM_INSET) * layerPanels.size();
-        view.setPreferredSize(new Dimension(currentSize.width, sizeY));
+        view.add(layerPanel, 0);
+        adjustScrollPane();
         
         return layerPanel;
     }
@@ -130,6 +131,7 @@ public class LayerControlPanel extends JPanel {
 
         LayerPanel layerPanel = layerPanels.remove(index);
         view.remove(layerPanel);
+        adjustScrollPane();
     }
 
     public void deleteLayerPanel(int index) {
