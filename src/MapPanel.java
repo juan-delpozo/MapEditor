@@ -54,13 +54,13 @@ public class MapPanel extends GridPanel {
                 int layer = editor.getCurrentLayer();
                 tilemap.change(mx, my, code, layer);
                 break;
-            case KeyEvent.VK_0: // Change to layer 0
-            case KeyEvent.VK_1: // Change to layer 1
-            case KeyEvent.VK_2: // Change to layer 2
-                int layerNumber = keyCode - KeyEvent.VK_0;
-                editor.setCurrentLayer(layerNumber);
-                System.out.println("Current Layer: " + editor.getCurrentLayer());
-                break;
+            // case KeyEvent.VK_0: // Change to layer 0
+            // case KeyEvent.VK_1: // Change to layer 1
+            // case KeyEvent.VK_2: // Change to layer 2
+            //     int layerNumber = keyCode - KeyEvent.VK_0;
+            //     editor.setCurrentLayer(layerNumber);
+            //     System.out.println("Current Layer: " + editor.getCurrentLayer());
+            //     break;
         }
 
         repaint();
