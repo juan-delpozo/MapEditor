@@ -115,10 +115,20 @@ public class TileMap {
         
     }
 
-    public void addLayer() {
-        layers.add(new TileLayer(numTilesY, numTilesX, tileParser));
+    public TileLayer addLayer() {
+        TileLayer layer = new TileLayer(numTilesY, numTilesX, tileParser);
+        layers.add(layer);
+        return layer;
     }
 
+    public void removeLayer(int index) {
+        if (index == 0) {
+            System.out.println("Collision layer cannot be removed");
+            return;
+        }
+
+        layers.remove(index);
+    }
     public Layer getLayer(int layerIndex) {
         return layers.get(layerIndex);
     }
