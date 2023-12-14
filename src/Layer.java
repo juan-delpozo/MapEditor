@@ -22,6 +22,10 @@ public abstract class Layer {
         return contentVisible;
     }
     
+    public void setContentVisible(boolean contentVisible) {
+        this.contentVisible = contentVisible;
+    }
+
     public void draw(Graphics g, int startRow, int startCol, int endRow, int endCol, int tileWidth, int tileHeight) {
         for (int row = startRow; row < endRow; row++) {
             for (int col = startCol; col < endCol; col++) {
