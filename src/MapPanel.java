@@ -1,6 +1,7 @@
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 
 public class MapPanel extends GridPanel {
 
@@ -8,15 +9,19 @@ public class MapPanel extends GridPanel {
     TileParser tileParser;
     TilePanel tilePN;
     TileMap tilemap;
+    
+    int lastMouseX, lastMouseY;
+
 
     public MapPanel(TileMapEditor editor) {
         super(editor.tilemap.scale);
         this.editor = editor;
         this.tilemap = editor.tilemap;
-        this.tileParser = editor.tileParser;
+        this.tileParser = editor.tileParser;    
+        setupMouseDragging();
     }
 
-    public void mousePressed(MouseEvent e) {
+    private void handleMouse(MouseEvent e) {
         int activeTilePanelIndex = editor.activeTilePanelIndex;
         if (activeTilePanelIndex == tileParser.invalidAtlasIndex) {
             return;
@@ -25,11 +30,39 @@ public class MapPanel extends GridPanel {
         int activeTileIndex = editor.getTilePanel(activeTilePanelIndex).activeTileIndex;
         int code = tileParser.getCode(activeTilePanelIndex, activeTileIndex);
 
-        int layer = editor.getCurrentLayer(); // Use the current layer
-        tilemap.change(mx, my, code, layer);
+        int layer = editor.getCurrentLayer();
+
+        if (lastMouseX >= 0 && lastMouseY >= 0) {
+            tilemap.change(e.getX(), e.getY(), code, layer);
+        } else {
+            tilemap.change(e.getX(), e.getY(), code, layer);
+        }
+
+        lastMouseX = e.getX();
+        lastMouseY = e.getY();
+
         repaint();
     }
+    
+    private void setupMouseDragging() {
+        addMouseMotionListener(new MouseMotionAdapter() {
+            public void mouseDragged(MouseEvent e) {
+                handleMouse(e);
+            }
+        });
+    }
 
+
+    public void mousePressed(MouseEvent e) {
+        handleMouse(e);
+    }
+
+    public void mouseReleased(MouseEvent e) {
+        lastMouseX = -1;
+        lastMouseY = -1;
+    }
+
+   
     public void keyPressed(KeyEvent e) {
         int keyCode = e.getKeyCode();
 
