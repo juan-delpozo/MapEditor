@@ -49,9 +49,16 @@ public class GridPanel extends JPanel implements KeyListener, MouseListener, Mou
         box.setLocation(mx / scale * scale, my / scale * scale);
         repaint();
     }
+    
+    // Update cursor position when mouse is dragged
+    public void mouseDragged(MouseEvent e) {
+        mx = e.getX();
+        my = e.getY();
+        box.setLocation(mx / scale * scale, my / scale * scale);
+        repaint();
+    }
 
     // Other mouse events (not used in this example)
-    public void mouseDragged(MouseEvent e) {}
     public void mouseClicked(MouseEvent e) {}
     public void mousePressed(MouseEvent e) {}
     public void mouseReleased(MouseEvent e) {}
